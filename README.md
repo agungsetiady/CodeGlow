@@ -1,6 +1,6 @@
-# CodeGlow — Code Beautifier & Formatter
+<img width="1366" height="599" alt="image" src="https://github.com/user-attachments/assets/b5264b69-83d7-4ff9-8ea0-c2ef4ee0b328" />
 
-<img width="1366" height="599" alt="image" src="https://github.com/user-attachments/assets/b2c4dfc9-dc7c-4fef-82c3-6a46ded9c387" />
+# CodeGlow — Code Beautifier & Formatter
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
