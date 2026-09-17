@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="id">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title>CodeGlow — Beautifier Code Formatter</title>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="aguphia-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="aguphia-icon.png">
+    <link rel="apple-touch-icon" href="aguphia-icon.png">
+    <link rel="shortcut icon" href="aguphia-icon.png" type="image/x-icon">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/2.0.3/beautify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/2.0.3/beautify-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/2.0.3/beautify-html.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <style>
+      /* ---------- Design tokens ---------- */
+      :root {
+        --bg: #F3F4F6;
+        --panel: #FFFFFF;
+        --panel-2: #F7F8FA;
+        --panel-3: #EEF0F3;
+        --border: #E1E4E9;
+        --border-soft: #ECEEF1;
+        --text: #1A1D24;
+        --text-dim: #5C6273;
+        --text-faint: #9BA0AE;
+        --accent: #A8650F;
+        --accent-ink: #FFFFFF;
+        --accent-soft: rgba(168, 101, 15, .10);
+        --accent-soft-2: rgba(168, 101, 15, .18);
+        --success: #2F9E6B;
+        --success-soft: rgba(47, 158, 107, .12);
+        --danger: #C6433D;
+        --danger-soft: rgba(198, 67, 61, .10);
+        --ring: rgba(168, 101, 15, .35);
+        --code-bg: #FAFAFB;
+        --code-gutter: #F1F2F5;
+        --tok-kw: #9A5B0A;
+        --tok-str: #2F9E6B;
+        --tok-com: #9BA0AE;
+        --tok-num: #1D6FB8;
+        --tok-tag: #8B3FA0;
+        --tok-attr: #0E8074;
+        --shadow: 0 1px 2px rgba(20, 20, 30, .04), 0 8px 24px -12px rgba(20, 20, 30, .12);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #12141A;
+          --panel: #181B22;
+          --panel-2: #1F232B;
+          --panel-3: #242833;
+          --border: #2B2F3A;
+          --border-soft: #232733;
+          --text: #E8EAED;
+          --text-dim: #9096A6;
+          --text-faint: #5B6172;
+          --accent: #E8A33D;
+          --accent-ink: #1A1204;
+          --accent-soft: rgba(232, 163, 61, .14);
+          --accent-soft-2: rgba(232, 163, 61, .24);
+          --success: #5FBE8D;
+          --success-soft: rgba(95, 190, 141, .14);
+          --danger: #E1615B;
+          --danger-soft: rgba(225, 97, 91, .14);
+          --ring: rgba(232, 163, 61, .35);
+          --code-bg: #14171D;
+          --code-gutter: #181B22;
+          --tok-kw: #E8A33D;
+          --tok-str: #5FBE8D;
+          --tok-com: #5B6172;
+          --tok-num: #6FA8DC;
+          --tok-tag: #C792EA;
+          --tok-attr: #4FD1C5;
+          --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .5);
+        }
+      }
+
+      :root[data-theme="dark"] {
+        --bg: #12141A;
+        --panel: #181B22;
+        --panel-2: #1F232B;
+        --panel-3: #242833;
+        --border: #2B2F3A;
+        --border-soft: #232733;
+        --text: #E8EAED;
+        --text-dim: #9096A6;
+        --text-faint: #5B6172;
+        --accent: #E8A33D;
+        --accent-ink: #1A1204;
+        --accent-soft: rgba(232, 163, 61, .14);
+        --accent-soft-2: rgba(232, 163, 61, .24);
+        --success: #5FBE8D;
+        --success-soft: rgba(95, 190, 141, .14);
+        --danger: #E1615B;
+        --danger-soft: rgba(225, 97, 91, .14);
+        --ring: rgba(232, 163, 61, .35);
+        --code-bg: #14171D;
+        --code-gutter: #181B22;
+        --tok-kw: #E8A33D;
+        --tok-str: #5FBE8D;
+        --tok-com: #5B6172;
+        --tok-num: #6FA8DC;
+        --tok-tag: #C792EA;
+        --tok-attr: #4FD1C5;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .5);
+      }
+
+      html,
+      body {
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        height: 100%;
+        overscroll-behavior: none;
+      }
+
+      body {
+        font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+        height: 100vh;
+      }
+
+      @supports (height: 100dvh) {
+        body {
+          height: 100dvh;
+        }
+      }
+
+      .font-mono-code {
+        font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+      }
+
+      ::selection {
+        background: var(--accent-soft-2);
+      }
+
+      /* scrollbars */
+      .scrollbox::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+
+      .scrollbox::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .scrollbox::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 8px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+      }
+
+      .scrollbox::-webkit-scrollbar-thumb:hover {
+        background: var(--text-faint);
+        background-clip: padding-box;
+      }
+
+      .scrollbox {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+      }
+
+      textarea {
+        caret-color: var(--accent);
+      }
+
+      textarea::placeholder {
+        color: var(--text-faint);
+      }
+
+      .btn-focus:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+      }
+
+      /* syntax highlight tokens (mapped from highlight.js classes) */
+      .hljs {
+        color: var(--text);
+        background: transparent;
+      }
+
+      .hljs-keyword,
+      .hljs-selector-tag,
+      .hljs-literal,
+      .hljs-title.function_,
+      .hljs-title.class_,
+      .hljs-section,
+      .hljs-name,
+      .hljs-strong {
+        color: var(--tok-kw);
+      }
+
+      .hljs-string,
+      .hljs-template-string,
+      .hljs-symbol,
+      .hljs-bullet,
+      .hljs-addition {
+        color: var(--tok-str);
+      }
+
+      .hljs-comment,
+      .hljs-quote,
+      .hljs-deletion {
+        color: var(--tok-com);
+        font-style: italic;
+      }
+
+      .hljs-number,
+      .hljs-built_in,
+      .hljs-type,
+      .hljs-literal,
+      .hljs-meta .hljs-number {
+        color: var(--tok-num);
+      }
+
+      .hljs-tag,
+      .hljs-selector-id,
+      .hljs-selector-class {
+        color: var(--tok-tag);
+      }
+
+      .hljs-attr,
+      .hljs-attribute,
+      .hljs-property,
+      .hljs-variable {
+        color: var(--tok-attr);
+      }
+
+      .hljs-meta {
+        color: var(--text-faint);
+      }
+
+      .hljs-emphasis {
+        font-style: italic;
+      }
+
+      /* pane expand animation */
+      .pane {
+        transition: opacity .15s ease;
+      }
+
+      /* mobile menu */
+      .drawer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height .25s ease;
+      }
+
+      .drawer.open {
+        max-height: 900px;
+      }
+
+      /* fullscreen pseudo mode */
+      .pseudo-fullscreen {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+      }
+
+      input[type="checkbox"].sw {
+        appearance: none;
+        width: 34px;
+        height: 20px;
+        border-radius: 999px;
+        background: var(--panel-3);
+        border: 1px solid var(--border);
+        position: relative;
+        cursor: pointer;
+        transition: .15s;
+        flex-shrink: 0;
+      }
+
+      input[type="checkbox"].sw:checked {
+        background: var(--accent-soft-2);
+        border-color: var(--accent);
+      }
+
+      input[type="checkbox"].sw::after {
+        content: '';
+        position: absolute;
+        top: 1px;
+        left: 1px;
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        background: var(--text-faint);
+        transition: .15s;
+      }
+
+      input[type="checkbox"].sw:checked::after {
+        transform: translateX(14px);
+        background: var(--accent);
+      }
+
+      select.select-plain {
+        background: var(--panel-2);
+      }
+    </style>
+  </head>
+
+  <body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- ============ TOPBAR ============ -->
+    <header class="shrink-0 border-b z-30 relative" style="background:var(--panel); border-color:var(--border);">
+      <div class="h-14 flex items-center gap-2 px-3 sm:px-4">
+
+        <!-- hamburger (mobile/tablet only) -->
+        <button id="hamburgerBtn" aria-label="Buka menu" class="lg:hidden btn-focus w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--panel-2)] shrink-0" style="color:var(--text);">
+          <svg id="hamburgerIcon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+
+        <div class="flex items-center gap-2 shrink-0 select-none pr-1">
+          <img src="aguphia-icon.png" class="w-8 h-8">
+          <span class="font-semibold tracking-tight text-[17px]" style="color:var(--text);">CodeGlow</span>
+        </div>
+
+        <!-- desktop controls -->
+        <div class="hidden lg:flex items-center gap-2 pl-2 ml-1 border-l" style="border-color:var(--border);">
+          <select id="langSelect" class="select-plain text-sm rounded-lg border px-2.5 py-1.5 btn-focus font-mono-code" style="border-color:var(--border); color:var(--text);"></select>
+
+          <select id="indentSize" class="select-plain text-sm rounded-lg border px-2.5 py-1.5 btn-focus" style="border-color:var(--border); color:var(--text);">
+            <option value="2">2 spasi</option>
+            <option value="4">4 spasi</option>
+            <option value="8">8 spasi</option>
+          </select>
+
+          <div class="flex items-center rounded-lg border overflow-hidden text-sm" style="border-color:var(--border);">
+            <button data-indent="spaces" class="indentTypeBtn px-2.5 py-1.5 font-mono-code" style="color:var(--text);">Space</button>
+            <button data-indent="tabs" class="indentTypeBtn px-2.5 py-1.5 font-mono-code border-l" style="border-color:var(--border); color:var(--text);">Tab</button>
+          </div>
+
+          <label class="flex items-center gap-1.5 text-sm pl-1 select-none cursor-pointer" style="color:var(--text-dim);" title="Pertahankan baris kosong ganda saat merapikan">
+            <input id="preserveBlank" type="checkbox" class="sw" checked>
+            Baris kosong
+          </label>
+
+          <label class="flex items-center gap-1.5 text-sm select-none cursor-pointer" style="color:var(--text-dim);" title="Hapus semua komentar sebelum merapikan">
+            <input id="stripComments" type="checkbox" class="sw">
+            Hapus komentar
+          </label>
+        </div>
+
+        <div class="flex-1"></div>
+
+        <!-- desktop actions -->
+        <div class="hidden lg:flex items-center gap-1.5">
+          <button id="loadSampleBtn" class="btn-focus text-sm px-3 py-1.5 rounded-lg hover:bg-[var(--panel-2)]" style="color:var(--text-dim);">Contoh</button>
+          <button id="swapBtn" title="Tukar input ↔ hasil" class="btn-focus w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-dim);">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M7 7h11l-3-3M17 17H6l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <button id="minifyBtn" class="btn-focus text-sm px-3 py-1.5 rounded-lg border hover:bg-[var(--panel-2)]" style="border-color:var(--border); color:var(--text);">Minify</button>
+          <button id="beautifyBtn" class="btn-focus text-sm px-4 py-1.5 rounded-lg font-medium" style="background:var(--accent); color:var(--accent-ink);">Beautify</button>
+          <button id="downloadBtn" title="Unduh hasil" class="btn-focus w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-dim);">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+
+          <span class="w-px h-6 mx-1" style="background:var(--border);"></span>
+
+          <button id="fullscreenBtn" title="Fullscreen" class="btn-focus w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-dim);">
+            <svg id="fsIcon" width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3m11-5v3a2 2 0 01-2 2h-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <button id="themeBtn" title="Ganti tema" class="btn-focus w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-dim);">
+            <svg id="themeIconSun" width="17" height="17" viewBox="0 0 24 24" fill="none" class="hidden">
+              <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" />
+              <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <svg id="themeIconMoon" width="17" height="17" viewBox="0 0 24 24" fill="none" class="hidden">
+              <path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- mobile compact actions -->
+        <div class="flex lg:hidden items-center gap-1.5">
+          <button id="beautifyBtnMobile" class="btn-focus text-sm px-3.5 py-1.5 rounded-lg font-medium" style="background:var(--accent); color:var(--accent-ink);">Beautify</button>
+          <button id="themeBtnMobile" class="btn-focus w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-dim);">
+            <svg id="themeIconSunM" width="17" height="17" viewBox="0 0 24 24" fill="none" class="hidden">
+              <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" />
+              <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <svg id="themeIconMoonM" width="17" height="17" viewBox="0 0 24 24" fill="none" class="hidden">
+              <path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- mobile/tablet drawer -->
+      <div id="drawer" class="drawer lg:hidden border-t" style="border-color:var(--border); background:var(--panel);">
+        <div class="p-3 flex flex-col gap-3">
+          <div class="grid grid-cols-2 gap-2">
+            <select id="langSelectM" class="select-plain text-sm rounded-lg border px-2.5 py-2 btn-focus font-mono-code col-span-2" style="border-color:var(--border); color:var(--text);"></select>
+            <select id="indentSizeM" class="select-plain text-sm rounded-lg border px-2.5 py-2 btn-focus" style="border-color:var(--border); color:var(--text);">
+              <option value="2">2 spasi</option>
+              <option value="4">4 spasi</option>
+              <option value="8">8 spasi</option>
+            </select>
+            <div class="flex items-center rounded-lg border overflow-hidden text-sm" style="border-color:var(--border);">
+              <button data-indent="spaces" class="indentTypeBtnM flex-1 py-2 font-mono-code" style="color:var(--text);">Space</button>
+              <button data-indent="tabs" class="indentTypeBtnM flex-1 py-2 font-mono-code border-l" style="border-color:var(--border); color:var(--text);">Tab</button>
+            </div>
+          </div>
+
+          <label class="flex items-center gap-2 text-sm select-none" style="color:var(--text-dim);">
+            <input id="preserveBlankM" type="checkbox" class="sw" checked>
+            Pertahankan baris kosong
+          </label>
+
+          <label class="flex items-center gap-2 text-sm select-none" style="color:var(--text-dim);">
+            <input id="stripCommentsM" type="checkbox" class="sw">
+            Hapus komentar (// # -- &lt;!-- --&gt; /* */)
+          </label>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="loadSampleBtnM" class="btn-focus text-sm px-3 py-2 rounded-lg border" style="border-color:var(--border); color:var(--text);">Muat contoh</button>
+            <button id="swapBtnM" class="btn-focus text-sm px-3 py-2 rounded-lg border" style="border-color:var(--border); color:var(--text);">Tukar panel</button>
+            <button id="minifyBtnM" class="btn-focus text-sm px-3 py-2 rounded-lg border" style="border-color:var(--border); color:var(--text);">Minify</button>
+            <button id="downloadBtnM" class="btn-focus text-sm px-3 py-2 rounded-lg border" style="border-color:var(--border); color:var(--text);">Unduh hasil</button>
+          </div>
+          <button id="fullscreenBtnM" class="btn-focus text-sm px-3 py-2 rounded-lg border" style="border-color:var(--border); color:var(--text);">Mode layar penuh</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ MAIN ============ -->
+    <main id="mainWrap" class="flex-1 min-h-0" style="background:var(--bg);">
+      <div id="mainGrid" class="h-full grid grid-rows-2 grid-cols-1 lg:grid-rows-1 lg:grid-cols-2 gap-px" style="background:var(--border);">
+
+        <!-- INPUT PANE -->
+        <section id="paneInput" class="pane flex flex-col min-h-0 h-full" style="background:var(--panel);">
+          <div class="flex items-center gap-2 px-3 h-10 border-b shrink-0" style="border-color:var(--border);">
+            <span class="w-1.5 h-1.5 rounded-full" style="background:var(--accent);"></span>
+            <span class="text-sm font-medium" style="color:var(--text);">Input</span>
+            <span id="langBadgeIn" class="text-[11px] px-1.5 py-0.5 rounded font-mono-code" style="background:var(--accent-soft); color:var(--accent);"></span>
+            <div class="flex-1"></div>
+            <button id="wrapToggleIn" title="Word wrap" class="btn-focus w-7 h-7 rounded-md flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-faint);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18M3 12h13a3 3 0 010 6h-3l2-2m-2 2l2 2M3 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <button id="clearBtn" title="Bersihkan" class="btn-focus w-7 h-7 rounded-md flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-faint);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M4 7h16M9 7V4h6v3m-8 0l1 13h8l1-13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <button id="expandIn" title="Perbesar panel" class="btn-focus w-7 h-7 rounded-md flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-faint);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="flex-1 min-h-0 flex relative">
+            <div id="gutterIn" class="scrollbox font-mono-code text-[13px] leading-[1.55] text-right select-none overflow-hidden px-2 pt-3" style="width:44px; background:var(--code-gutter); color:var(--text-faint); border-right:1px solid var(--border-soft);"></div>
+            <textarea id="inputArea" spellcheck="false" autocapitalize="off" autocomplete="off" class="scrollbox font-mono-code text-[13px] leading-[1.55] flex-1 h-full resize-none outline-none px-3 pt-3 pb-6 whitespace-pre overflow-auto" style="background:var(--code-bg); color:var(--text);" placeholder="Tempel kode di sini, atau klik “Contoh” untuk memuat contoh sesuai bahasa yang dipilih…"></textarea>
+          </div>
+
+          <div class="flex items-center justify-between px-3 h-8 text-[11px] shrink-0 border-t font-mono-code" style="border-color:var(--border); color:var(--text-faint);">
+            <span id="statsIn">0 baris · 0 karakter</span>
+            <span id="modeNoteIn"></span>
+          </div>
+        </section>
+
+        <!-- OUTPUT PANE -->
+        <section id="paneOutput" class="pane flex flex-col min-h-0 h-full" style="background:var(--panel);">
+          <div class="flex items-center gap-2 px-3 h-10 border-b shrink-0" style="border-color:var(--border);">
+            <span id="statusDot" class="w-1.5 h-1.5 rounded-full" style="background:var(--text-faint);"></span>
+            <span class="text-sm font-medium" style="color:var(--text);">Hasil</span>
+            <span id="langBadgeOut" class="text-[11px] px-1.5 py-0.5 rounded font-mono-code" style="background:var(--panel-3); color:var(--text-dim);"></span>
+            <div class="flex-1"></div>
+            <button id="wrapToggleOut" title="Word wrap" class="btn-focus w-7 h-7 rounded-md flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-faint);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18M3 12h13a3 3 0 010 6h-3l2-2m-2 2l2 2M3 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <button id="copyBtn" title="Salin hasil" class="btn-focus w-7 h-7 rounded-md flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-faint);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <rect x="9" y="9" width="11" height="11" rx="1.5" stroke="currentColor" stroke-width="2" />
+                <path d="M5 15V5a1 1 0 011-1h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </button>
+            <button id="expandOut" title="Perbesar panel" class="btn-focus w-7 h-7 rounded-md flex items-center justify-center hover:bg-[var(--panel-2)]" style="color:var(--text-faint);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="flex-1 min-h-0 flex relative">
+            <div id="gutterOut" class="scrollbox font-mono-code text-[13px] leading-[1.55] text-right select-none overflow-hidden px-2 pt-3" style="width:44px; background:var(--code-gutter); color:var(--text-faint); border-right:1px solid var(--border-soft);"></div>
+            <pre id="outputScroll" class="scrollbox flex-1 h-full m-0 overflow-auto px-3 pt-3 pb-6 whitespace-pre" style="background:var(--code-bg);"><code id="outputCode" class="font-mono-code text-[13px] leading-[1.55] hljs" style="background:transparent;"></code></pre>
+            <div id="emptyState" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <p class="text-sm" style="color:var(--text-faint);">Hasil rapi akan muncul di sini</p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between px-3 h-8 text-[11px] shrink-0 border-t font-mono-code" style="border-color:var(--border); color:var(--text-faint);">
+            <span id="statsOut">0 baris · 0 karakter</span>
+            <span id="copiedNote" class="opacity-0 transition-opacity" style="color:var(--success);">Disalin ✓</span>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- toast -->
+    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2 rounded-lg text-sm font-medium opacity-0 pointer-events-none transition-all duration-200 translate-y-2" style="background:var(--panel); border:1px solid var(--border); color:var(--text); box-shadow:var(--shadow);"></div>
+
+    <script>
+      (function() {
+        "use strict";
+
+        /* ================= LANGUAGE DEFINITIONS ================= */
+        var LANGS = [{
+            id: 'html',
+            label: 'HTML',
+            ext: 'html',
+            hljs: 'xml',
+            kind: 'html'
+          },
+          {
+            id: 'xml',
+            label: 'XML',
+            ext: 'xml',
+            hljs: 'xml',
+            kind: 'html'
+          },
+          {
+            id: 'css',
+            label: 'CSS',
+            ext: 'css',
+            hljs: 'css',
+            kind: 'css'
+          },
+          {
+            id: 'scss',
+            label: 'SCSS',
+            ext: 'scss',
+            hljs: 'scss',
+            kind: 'css'
+          },
+          {
+            id: 'less',
+            label: 'LESS',
+            ext: 'less',
+            hljs: 'less',
+            kind: 'css'
+          },
+          {
+            id: 'js',
+            label: 'JavaScript',
+            ext: 'js',
+            hljs: 'javascript',
+            kind: 'js'
+          },
+          {
+            id: 'jsx',
+            label: 'JSX',
+            ext: 'jsx',
+            hljs: 'javascript',
+            kind: 'js'
+          },
+          {
+            id: 'ts',
+            label: 'TypeScript',
+            ext: 'ts',
+            hljs: 'typescript',
+            kind: 'js'
+          },
+          {
+            id: 'json',
+            label: 'JSON',
+            ext: 'json',
+            hljs: 'json',
+            kind: 'json'
+          },
+          {
+            id: 'sql',
+            label: 'SQL',
+            ext: 'sql',
+            hljs: 'sql',
+            kind: 'sql'
+          },
+          {
+            id: 'php',
+            label: 'PHP',
+            ext: 'php',
+            hljs: 'php',
+            kind: 'basic'
+          },
+          {
+            id: 'python',
+            label: 'Python',
+            ext: 'py',
+            hljs: 'python',
+            kind: 'basic'
+          },
+          {
+            id: 'yaml',
+            label: 'YAML',
+            ext: 'yaml',
+            hljs: 'yaml',
+            kind: 'basic'
+          },
+          {
+            id: 'markdown',
+            label: 'Markdown',
+            ext: 'md',
+            hljs: 'markdown',
+            kind: 'basic'
+          },
+          {
+            id: 'bash',
+            label: 'Shell / Bash',
+            ext: 'sh',
+            hljs: 'bash',
+            kind: 'basic'
+          }
+        ];
+
+        var COMMENT_SPECS = {
+          html: {
+            block: [
+              ['<!--', '-->']
+            ]
+          },
+          xml: {
+            block: [
+              ['<!--', '-->']
+            ]
+          },
+          css: {
+            block: [
+              ['/*', '*/']
+            ],
+            strings: ['"', "'"]
+          },
+          scss: {
+            block: [
+              ['/*', '*/']
+            ],
+            line: ['//'],
+            strings: ['"', "'"],
+            guardColon: true
+          },
+          less: {
+            block: [
+              ['/*', '*/']
+            ],
+            line: ['//'],
+            strings: ['"', "'"],
+            guardColon: true
+          },
+          js: {
+            block: [
+              ['/*', '*/']
+            ],
+            line: ['//'],
+            strings: ['"', "'", '`'],
+            regexAware: true
+          },
+          jsx: {
+            block: [
+              ['/*', '*/']
+            ],
+            line: ['//'],
+            strings: ['"', "'", '`'],
+            regexAware: true
+          },
+          ts: {
+            block: [
+              ['/*', '*/']
+            ],
+            line: ['//'],
+            strings: ['"', "'", '`'],
+            regexAware: true
+          },
+          sql: {
+            block: [
+              ['/*', '*/']
+            ],
+            line: ['--'],
+            strings: ["'", '"']
+          },
+          php: {
+            block: [
+              ['/*', '*/']
+            ],
+            line: ['//', '#'],
+            strings: ['"', "'"]
+          },
+          python: {
+            line: ['#'],
+            strings: ['"', "'"],
+            triple: ['"""', "'''"]
+          },
+          bash: {
+            line: ['#'],
+            strings: ['"', "'"]
+          }
+          /* json, yaml, markdown sengaja tidak diberi spec: JSON tidak punya sintaks
+             komentar, sedangkan '#' di YAML dan Markdown mudah bentrok dengan kode
+             warna hex / heading sehingga berisiko merusak data */
+        };
+
+        var SAMPLES = {
+          html: '<!doctype html><html><head><title>Contoh</title></head><body><div class="wrap"><h1>Halo</h1><p>Ini contoh   markup yang berantakan.</p><ul><li>Satu</li><li>Dua</li></ul></div></body></html>',
+          xml: '<catalog><book id="1"><title>Belajar SQL</title><author>Budi</author></book><book id="2"><title>Belajar CSS</title><author>Sari</author></book></catalog>',
+          css: '.card{display:flex;align-items:center;padding:12px 16px;border-radius:8px}.card .title{font-weight:600;color:#222}.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.1)}',
+          scss: '.btn{ $pad: 12px; padding: $pad; &.primary{ background: darken(#3498db,10%); &:hover{ opacity:.9; } } }',
+          less: '@primary: #3498db; .btn{ padding: 10px; background: @primary; &:hover{ background: darken(@primary,10%); } }',
+          js: 'function greet(name){if(!name){name="dunia"}console.log("Halo, "+name+"!");const items=[1,2,3].map(function(n){return n*2});return items}',
+          jsx: 'function Card({title,children}){return <div className="card"><h2>{title}</h2><div className="body">{children}</div></div>}',
+          ts: 'interface User{id:number;name:string;active?:boolean}function findUser(id:number,users:User[]):User|undefined{return users.find(u=>u.id===id)}',
+          json: '{"name":"beautify","version":1.0,"tags":["code","formatter","dev-tool"],"active":true,"meta":{"author":"tim","nested":{"a":1,"b":[1,2,3]}}}',
+          sql: 'select u.id, u.name, count(o.id) as total_order from users u left join orders o on o.user_id = u.id where u.active = 1 and u.created_at > \'2024-01-01\' group by u.id, u.name order by total_order desc limit 20;',
+          php: '<?php\nfunction sapa($nama) {\nif (!$nama) { $nama = "dunia"; }\nreturn "Halo, " . $nama . "!";\n}\necho sapa("Budi");',
+          python: 'def greet(name=None):\n    if not name:\n        name = "dunia"\n    return f"Halo, {name}!"\n\nfor i in range(3):\n    print(greet())',
+          yaml: 'name: beautify\nversion: 1.0\nfeatures:\n  - format\n  - minify\n  - dark-mode\nauthor:\n  name: tim\n  active: true',
+          markdown: '# Judul\n\nIni contoh   paragraf dengan   spasi berantakan.\n\n- satu\n- dua\n\n\n\n- tiga',
+          bash: '#!/bin/bash\nfor f in *.txt; do\n  echo "Memproses $f"\n  cat "$f" >> gabungan.txt\ndone'
+        };
+
+        /* ================= STATE ================= */
+        var state = {
+          lang: 'html',
+          indentSize: 2,
+          indentType: 'spaces', // spaces | tabs
+          preserveBlank: true,
+          stripComments: false,
+          wrapIn: false,
+          wrapOut: false
+        };
+
+        /* ================= DOM refs ================= */
+        var $ = function(id) {
+          return document.getElementById(id);
+        };
+        var inputArea = $('inputArea');
+        var outputCode = $('outputCode');
+        var outputScroll = $('outputScroll');
+        var gutterIn = $('gutterIn');
+        var gutterOut = $('gutterOut');
+        var emptyState = $('emptyState');
+        var statsIn = $('statsIn');
+        var statsOut = $('statsOut');
+        var modeNoteIn = $('modeNoteIn');
+        var statusDot = $('statusDot');
+        var langBadgeIn = $('langBadgeIn');
+        var langBadgeOut = $('langBadgeOut');
+        var toastEl = $('toast');
+
+        /* ================= INIT LANG SELECTS ================= */
+        function buildLangOptions(sel) {
+          sel.innerHTML = '';
+          LANGS.forEach(function(l) {
+            var o = document.createElement('option');
+            o.value = l.id;
+            o.textContent = l.label;
+            sel.appendChild(o);
+          });
+        }
+        var langSelect = $('langSelect'),
+          langSelectM = $('langSelectM');
+        buildLangOptions(langSelect);
+        buildLangOptions(langSelectM);
+
+        function getLang(id) {
+          for (var i = 0; i < LANGS.length; i++) {
+            if (LANGS[i].id === id) return LANGS[i];
+          }
+          return LANGS[0];
+        }
+
+        /* ================= THEME ================= */
+        function applyThemeIcons(theme) {
+          var isDark = theme === 'dark';
+          ['themeIconSun', 'themeIconSunM'].forEach(function(id) {
+            $(id).classList.toggle('hidden', !isDark);
+          });
+          ['themeIconMoon', 'themeIconMoonM'].forEach(function(id) {
+            $(id).classList.toggle('hidden', isDark);
+          });
+        }
+
+        function setTheme(theme) {
+          document.documentElement.setAttribute('data-theme', theme);
+          applyThemeIcons(theme);
+          try {
+            localStorage.setItem('beautify-theme', theme);
+          } catch (e) {}
+        }
+
+        function initTheme() {
+          var saved = null;
+          try {
+            saved = localStorage.getItem('beautify-theme');
+          } catch (e) {}
+          setTheme(saved === 'light' ? 'light' : 'dark');
+        }
+
+        function toggleTheme() {
+          var cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+          setTheme(cur === 'light' ? 'dark' : 'light');
+        }
+        $('themeBtn').addEventListener('click', toggleTheme);
+        $('themeBtnMobile').addEventListener('click', toggleTheme);
+        initTheme();
+
+        /* ================= HAMBURGER DRAWER ================= */
+        var drawer = $('drawer'),
+          hamburgerBtn = $('hamburgerBtn');
+        hamburgerBtn.addEventListener('click', function() {
+          drawer.classList.toggle('open');
+        });
+
+        /* ================= FULLSCREEN (real browser fullscreen) ================= */
+        function isFsActive() {
+          return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+        }
+
+        function requestFs(el) {
+          var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+          if (fn) return fn.call(el);
+          return Promise.reject(new Error('not supported'));
+        }
+
+        function exitFs() {
+          var fn = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+          if (fn) return fn.call(document);
+          return Promise.reject(new Error('not supported'));
+        }
+
+        function toggleFullscreen() {
+          if (document.body.getAttribute('data-pseudo-fs') === '1') {
+            exitPseudoFsIfAny();
+            return;
+          }
+          if (isFsActive()) {
+            exitFs()['catch'](function() {});
+            return;
+          }
+          requestFs(document.documentElement)['catch'](function() {
+            // Blocked (e.g. iframe without allow="fullscreen") — fall back to a full-viewport view
+            document.getElementById('mainWrap').classList.add('pseudo-fullscreen');
+            document.body.style.overflow = 'hidden';
+            document.body.setAttribute('data-pseudo-fs', '1');
+            updateFsIcon(true);
+            syncGutters();
+            showToast('Browser memblokir mode layar penuh, memakai tampilan penuh alternatif');
+          });
+        }
+
+        function exitPseudoFsIfAny() {
+          if (document.body.getAttribute('data-pseudo-fs') === '1') {
+            document.getElementById('mainWrap').classList.remove('pseudo-fullscreen');
+            document.body.style.overflow = '';
+            document.body.removeAttribute('data-pseudo-fs');
+            updateFsIcon(false);
+            syncGutters();
+          }
+        }
+
+        function updateFsIcon(active) {
+          var expandPath = 'M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3m11-5v3a2 2 0 01-2 2h-3';
+          var collapsePath = 'M9 4v3a2 2 0 01-2 2H4M20 9h-3a2 2 0 01-2-2V4M4 15h3a2 2 0 012 2v3M15 20v-3a2 2 0 012-2h3';
+          var d = $('fsIcon');
+          d.querySelector('path').setAttribute('d', active ? collapsePath : expandPath);
+        }
+        document.addEventListener('fullscreenchange', function() {
+          updateFsIcon(isFsActive());
+          syncGutters();
+        });
+        document.addEventListener('webkitfullscreenchange', function() {
+          updateFsIcon(isFsActive());
+          syncGutters();
+        });
+        $('fullscreenBtn').addEventListener('click', toggleFullscreen);
+        $('fullscreenBtnM').addEventListener('click', function() {
+          toggleFullscreen();
+          drawer.classList.remove('open');
+        });
+
+        /* ================= INDENT CONTROLS ================= */
+        function setIndentType(type) {
+          state.indentType = type;
+          [document.querySelectorAll('.indentTypeBtn'), document.querySelectorAll('.indentTypeBtnM')].forEach(function(list) {
+            list.forEach(function(btn) {
+              var active = btn.getAttribute('data-indent') === type;
+              btn.style.background = active ? 'var(--accent-soft)' : 'transparent';
+              btn.style.color = active ? 'var(--accent)' : 'var(--text)';
+            });
+          });
+        }
+        document.querySelectorAll('.indentTypeBtn, .indentTypeBtnM').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            setIndentType(btn.getAttribute('data-indent'));
+          });
+        });
+        setIndentType('spaces');
+
+        $('indentSize').addEventListener('change', function() {
+          state.indentSize = Number(this.value);
+          $('indentSizeM').value = this.value;
+        });
+        $('indentSizeM').addEventListener('change', function() {
+          state.indentSize = Number(this.value);
+          $('indentSize').value = this.value;
+        });
+
+        $('preserveBlank').addEventListener('change', function() {
+          state.preserveBlank = this.checked;
+          $('preserveBlankM').checked = this.checked;
+        });
+        $('preserveBlankM').addEventListener('change', function() {
+          state.preserveBlank = this.checked;
+          $('preserveBlank').checked = this.checked;
+        });
+
+        $('stripComments').addEventListener('change', function() {
+          state.stripComments = this.checked;
+          $('stripCommentsM').checked = this.checked;
+        });
+        $('stripCommentsM').addEventListener('change', function() {
+          state.stripComments = this.checked;
+          $('stripComments').checked = this.checked;
+        });
+
+        function updateCommentAvailability() {
+          var supported = !!COMMENT_SPECS[state.lang];
+          [$('stripComments'), $('stripCommentsM')].forEach(function(cb) {
+            cb.disabled = !supported;
+            var label = cb.closest('label');
+            label.style.opacity = supported ? '1' : '.4';
+            label.title = supported ?
+              'Hapus semua komentar sebelum merapikan' :
+              'Bahasa ini tidak punya sintaks komentar, atau berisiko merusak data (JSON/YAML/Markdown) — dilewati';
+            if (!supported) {
+              cb.checked = false;
+              state.stripComments = false;
+            }
+          });
+        }
+
+        function syncLangSelects(id) {
+          state.lang = id;
+          langSelect.value = id;
+          langSelectM.value = id;
+          var l = getLang(id);
+          langBadgeIn.textContent = l.label;
+          langBadgeOut.textContent = l.label;
+          modeNoteIn.textContent = (l.kind === 'basic') ? 'mode: pembersihan dasar' : '';
+          inputArea.placeholder = 'Tempel kode ' + l.label + ' di sini, atau klik “Contoh”…';
+          updateCommentAvailability();
+        }
+        langSelect.addEventListener('change', function() {
+          syncLangSelects(this.value);
+        });
+        langSelectM.addEventListener('change', function() {
+          syncLangSelects(this.value);
+        });
+        syncLangSelects('html');
+
+        /* ================= LINE NUMBERS / GUTTER ================= */
+        function countLines(str) {
+          if (str === '') return 1;
+          return str.split('\n').length;
+        }
+
+        function renderGutter(el, n) {
+          var frag = [];
+          for (var i = 1; i <= n; i++) frag.push(i);
+          el.textContent = frag.join('\n');
+        }
+
+        function syncGutters() {
+          renderGutter(gutterIn, countLines(inputArea.value));
+          renderGutter(gutterOut, countLines(outputCode.textContent));
+        }
+        inputArea.addEventListener('scroll', function() {
+          gutterIn.scrollTop = inputArea.scrollTop;
+        });
+        outputScroll.addEventListener('scroll', function() {
+          gutterOut.scrollTop = outputScroll.scrollTop;
+        });
+
+        /* ================= STATS ================= */
+        function updateStats(el, str) {
+          var lines = countLines(str);
+          var chars = str.length;
+          var bytes = new Blob([str]).size;
+          el.textContent = lines + ' baris · ' + chars + ' karakter · ' + bytes + ' bytes';
+        }
+
+        /* ================= INPUT EVENTS ================= */
+        inputArea.addEventListener('input', function() {
+          renderGutter(gutterIn, countLines(inputArea.value));
+          updateStats(statsIn, inputArea.value);
+        });
+
+        /* ================= WRAP TOGGLES ================= */
+        function setWrap(target, on) {
+          if (target === 'in') {
+            state.wrapIn = on;
+            inputArea.style.whiteSpace = on ? 'pre-wrap' : 'pre';
+            $('wrapToggleIn').style.color = on ? 'var(--accent)' : 'var(--text-faint)';
+          } else {
+            state.wrapOut = on;
+            outputScroll.style.whiteSpace = on ? 'pre-wrap' : 'pre';
+            $('wrapToggleOut').style.color = on ? 'var(--accent)' : 'var(--text-faint)';
+          }
+        }
+        $('wrapToggleIn').addEventListener('click', function() {
+          setWrap('in', !state.wrapIn);
+        });
+        $('wrapToggleOut').addEventListener('click', function() {
+          setWrap('out', !state.wrapOut);
+        });
+
+        /* ================= PANE EXPAND ================= */
+        function setExpand(which) {
+          var pi = $('paneInput'),
+            po = $('paneOutput'),
+            grid = $('mainGrid');
+          if (which === 'in') {
+            po.style.display = po.style.display === 'none' ? '' : 'none';
+          } else {
+            pi.style.display = pi.style.display === 'none' ? '' : 'none';
+          }
+          var bothVisible = pi.style.display !== 'none' && po.style.display !== 'none';
+          grid.classList.toggle('lg:grid-cols-2', bothVisible);
+          grid.classList.toggle('lg:grid-cols-1', !bothVisible);
+          grid.classList.toggle('grid-rows-2', bothVisible);
+          grid.classList.toggle('grid-rows-1', !bothVisible);
+          syncGutters();
+        }
+        $('expandIn').addEventListener('click', function() {
+          setExpand('in');
+        });
+        $('expandOut').addEventListener('click', function() {
+          setExpand('out');
+        });
+
+        /* ================= CLEAR ================= */
+        $('clearBtn').addEventListener('click', function() {
+          inputArea.value = '';
+          inputArea.dispatchEvent(new Event('input'));
+          inputArea.focus();
+        });
+
+        /* ================= SWAP ================= */
+        function swapPanes() {
+          var outText = outputCode.textContent;
+          if (!outText) {
+            showToast('Belum ada hasil untuk ditukar');
+            return;
+          }
+          inputArea.value = outText;
+          inputArea.dispatchEvent(new Event('input'));
+          showToast('Hasil dipindahkan ke input');
+        }
+        $('swapBtn').addEventListener('click', swapPanes);
+        $('swapBtnM').addEventListener('click', function() {
+          swapPanes();
+          drawer.classList.remove('open');
+        });
+
+        /* ================= LOAD SAMPLE ================= */
+        function loadSample() {
+          var s = SAMPLES[state.lang] || '';
+          inputArea.value = s;
+          inputArea.dispatchEvent(new Event('input'));
+        }
+        $('loadSampleBtn').addEventListener('click', loadSample);
+        $('loadSampleBtnM').addEventListener('click', function() {
+          loadSample();
+          drawer.classList.remove('open');
+        });
+
+        /* ================= TOAST ================= */
+        var toastTimer;
+
+        function showToast(msg) {
+          toastEl.textContent = msg;
+          toastEl.style.opacity = 1;
+          toastEl.style.transform = 'translateY(0) translateX(-50%)';
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(function() {
+            toastEl.style.opacity = 0;
+            toastEl.style.transform = 'translateY(8px) translateX(-50%)';
+          }, 1800);
+        }
+
+        /* ================= FORMATTERS ================= */
+        function indentStr() {
+          return state.indentType === 'tabs' ? '\t' : ' '.repeat(state.indentSize);
+        }
+
+        function beautifyOptions() {
+          return {
+            indent_size: state.indentSize,
+            indent_char: state.indentType === 'tabs' ? '\t' : ' ',
+            indent_with_tabs: state.indentType === 'tabs',
+            preserve_newlines: state.preserveBlank,
+            max_preserve_newlines: state.preserveBlank ? 2 : 0,
+            wrap_line_length: 0,
+            end_with_newline: false,
+            indent_inner_html: true
+          };
+        }
+
+        function stripComments(code, spec) {
+          if (!spec) return code;
+          var i = 0,
+            n = code.length,
+            out = [],
+            tail = '';
+          var lineMarks = (spec.line || []).slice().sort(function(a, b) {
+            return b.length - a.length;
+          });
+          var blocks = spec.block || [];
+          var strings = spec.strings || [];
+          var triples = spec.triple || [];
+
+          function startsWith(s, pos) {
+            return code.substr(pos, s.length) === s;
+          }
+
+          function append(str) {
+            out.push(str);
+            tail = (tail + str).slice(-80);
+          }
+
+          function lastWord() {
+            var m = /([A-Za-z_$][A-Za-z0-9_$]*)\s*$/.exec(tail);
+            return m ? m[1] : '';
+          }
+
+          function lastNonSpaceChar() {
+            for (var k = tail.length - 1; k >= 0; k--) {
+              if (!/\s/.test(tail[k])) return tail[k];
+            }
+            return '';
+          }
+
+          while (i < n) {
+            // triple-quoted strings (Python docstrings) — treat as opaque, never scan inside for comments
+            var matchedTriple = null;
+            for (var t = 0; t < triples.length; t++) {
+              if (startsWith(triples[t], i)) {
+                matchedTriple = triples[t];
+                break;
+              }
+            }
+            if (matchedTriple) {
+              var tStart = i;
+              i += matchedTriple.length;
+              var tEnd = code.indexOf(matchedTriple, i);
+              i = (tEnd === -1) ? n : tEnd + matchedTriple.length;
+              append(code.slice(tStart, i));
+              continue;
+            }
+
+            var ch = code[i];
+
+            // string literals — copied through untouched so comment markers inside strings are preserved
+            if (strings.indexOf(ch) !== -1) {
+              var sStart = i,
+                quote = ch;
+              i++;
+              while (i < n) {
+                if (code[i] === '\\') {
+                  i += 2;
+                  continue;
+                }
+                if (code[i] === quote) {
+                  i++;
+                  break;
+                }
+                i++;
+              }
+              append(code.slice(sStart, i));
+              continue;
+            }
+
+            // JS/TS regex literals — best-effort lookback so "a / b" isn't mistaken for a comment/regex
+            if (spec.regexAware && ch === '/' && code[i + 1] !== '/' && code[i + 1] !== '*') {
+              var lw = lastWord(),
+                lc = lastNonSpaceChar();
+              var regexCtx = lc === '' || /[=(:,;!&|?{}\[+\-*%^~<>\n]/.test(lc) || ['return', 'typeof', 'case', 'in', 'of', 'new', 'delete', 'void', 'throw', 'instanceof', 'yield', 'do', 'else', 'if', 'while'].indexOf(lw) !== -1;
+              if (regexCtx) {
+                var rStart = i,
+                  inClass = false;
+                i++;
+                while (i < n) {
+                  var c2 = code[i];
+                  if (c2 === '\\') {
+                    i += 2;
+                    continue;
+                  }
+                  if (c2 === '[') {
+                    inClass = true;
+                    i++;
+                    continue;
+                  }
+                  if (c2 === ']') {
+                    inClass = false;
+                    i++;
+                    continue;
+                  }
+                  if (c2 === '/' && !inClass) {
+                    i++;
+                    break;
+                  }
+                  if (c2 === '\n') {
+                    break;
+                  }
+                  i++;
+                }
+                while (i < n && /[a-z]/i.test(code[i])) i++;
+                append(code.slice(rStart, i));
+                continue;
+              }
+            }
+
+            // line comments
+            var matchedLine = null;
+            for (var lIdx = 0; lIdx < lineMarks.length; lIdx++) {
+              if (startsWith(lineMarks[lIdx], i)) {
+                matchedLine = lineMarks[lIdx];
+                break;
+              }
+            }
+            if (matchedLine && !(spec.guardColon && matchedLine === '//' && i > 0 && code[i - 1] === ':')) {
+              while (i < n && code[i] !== '\n') i++;
+              continue;
+            }
+
+            // block comments
+            var matchedBlock = null;
+            for (var bIdx = 0; bIdx < blocks.length; bIdx++) {
+              if (startsWith(blocks[bIdx][0], i)) {
+                matchedBlock = blocks[bIdx];
+                break;
+              }
+            }
+            if (matchedBlock) {
+              var endPos = code.indexOf(matchedBlock[1], i + matchedBlock[0].length);
+              i = (endPos === -1) ? n : endPos + matchedBlock[1].length;
+              continue;
+            }
+
+            append(ch);
+            i++;
+          }
+          return out.join('');
+        }
+
+        function splitTopLevelCommas(str) {
+          var depth = 0,
+            cur = '',
+            res = [];
+          for (var i = 0; i < str.length; i++) {
+            var ch = str[i];
+            if (ch === '(') depth++;
+            if (ch === ')') depth--;
+            if (ch === ',' && depth === 0) {
+              res.push(cur);
+              cur = '';
+            } else cur += ch;
+          }
+          if (cur.trim() !== '') res.push(cur);
+          return res;
+        }
+
+        var SQL_CLAUSES = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'OFFSET',
+          'UNION ALL', 'UNION', 'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE FROM',
+          'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'FULL JOIN', 'JOIN', 'ON', 'AND', 'OR',
+          'CREATE TABLE', 'ALTER TABLE', 'DROP TABLE'
+        ].sort(function(a, b) {
+          return b.length - a.length;
+        });
+
+        function formatSQL(sql, ind) {
+          var s = sql.replace(/\s+/g, ' ').trim();
+          SQL_CLAUSES.forEach(function(kw) {
+            var re = new RegExp('\\b' + kw.replace(/ /g, '\\s+') + '\\b', 'gi');
+            s = s.replace(re, '\n' + kw.toUpperCase());
+          });
+          var lines = s.split('\n').map(function(l) {
+            return l.trim();
+          }).filter(Boolean);
+          var out = [];
+          lines.forEach(function(line) {
+            var firstWord = line.split(' ')[0].toUpperCase();
+            if (['AND', 'OR', 'ON'].indexOf(firstWord) !== -1) {
+              out.push(ind + line);
+            } else if (firstWord === 'SELECT') {
+              var rest = line.slice(6).trim();
+              var cols = splitTopLevelCommas(rest);
+              out.push('SELECT');
+              cols.forEach(function(c, i) {
+                out.push(ind + c.trim() + (i < cols.length - 1 ? ',' : ''));
+              });
+            } else {
+              out.push(line);
+            }
+          });
+          return out.join('\n');
+        }
+
+        function genericCleanup(code) {
+          var lines = code.replace(/\r\n/g, '\n').split('\n').map(function(l) {
+            return l.replace(/[ \t]+$/, '');
+          });
+          var out = [],
+            blankRun = 0;
+          lines.forEach(function(l) {
+            if (l.trim() === '') {
+              blankRun++;
+              if (blankRun <= (state.preserveBlank ? 1 : 0)) out.push('');
+            } else {
+              blankRun = 0;
+              out.push(l);
+            }
+          });
+          while (out.length && out[0] === '') out.shift();
+          while (out.length && out[out.length - 1] === '') out.pop();
+          return out.join('\n');
+        }
+
+        function jsonPosToLineCol(str, pos) {
+          var pre = str.slice(0, pos);
+          var lines = pre.split('\n');
+          return {
+            line: lines.length,
+            col: lines[lines.length - 1].length + 1
+          };
+        }
+
+        function beautify() {
+          var code = inputArea.value;
+          var lang = getLang(state.lang);
+          var opts = beautifyOptions();
+
+          if (code.trim() === '') {
+            renderOutput('', lang, false);
+            showToast('Tempel kode dulu ya');
+            return;
+          }
+
+          try {
+            var result = '';
+            if (state.stripComments && COMMENT_SPECS[lang.id]) {
+              code = stripComments(code, COMMENT_SPECS[lang.id]);
+            }
+            switch (lang.kind) {
+              case 'html':
+                result = window.html_beautify(code, opts);
+                break;
+              case 'css':
+                result = window.css_beautify(code, opts);
+                break;
+              case 'js':
+                result = window.js_beautify(code, opts);
+                break;
+              case 'json':
+                var parsed = JSON.parse(code);
+                result = JSON.stringify(parsed, null, state.indentType === 'tabs' ? '\t' : state.indentSize);
+                break;
+              case 'sql':
+                result = formatSQL(code, indentStr());
+                break;
+              default:
+                result = genericCleanup(code);
+            }
+            renderOutput(result, lang, true);
+          } catch (err) {
+            var msg = 'Gagal merapikan: ' + err.message;
+            if (lang.kind === 'json') {
+              var m = /position (\d+)/.exec(err.message);
+              if (m) {
+                var lc = jsonPosToLineCol(code, Number(m[1]));
+                msg = 'JSON tidak valid — baris ' + lc.line + ', kolom ' + lc.col + ' (' + err.message + ')';
+              }
+            }
+            renderError(msg);
+          }
+        }
+
+        function minify() {
+          var code = inputArea.value;
+          var lang = getLang(state.lang);
+          if (code.trim() === '') {
+            showToast('Tempel kode dulu ya');
+            return;
+          }
+          try {
+            var result = '';
+            switch (lang.kind) {
+              case 'json':
+                result = JSON.stringify(JSON.parse(code));
+                break;
+              case 'css':
+                result = code.replace(/\/\*[\s\S]*?\*\//g, '')
+                  .replace(/\s+/g, ' ')
+                  .replace(/\s*([{}:;,])\s*/g, '$1')
+                  .replace(/;}/g, '}')
+                  .trim();
+                break;
+              case 'html':
+                result = code.replace(/<!--[\s\S]*?-->/g, '')
+                  .replace(/>\s+</g, '><')
+                  .replace(/\s+/g, ' ')
+                  .trim();
+                break;
+              case 'sql':
+                result = code.replace(/--.*$/gm, '').replace(/\s+/g, ' ').trim();
+                break;
+              default:
+                // safe "compact": strip comments-free whitespace trimming only, no risky JS minify
+                result = code.replace(/\r\n/g, '\n')
+                  .split('\n')
+                  .map(function(l) {
+                    return l.trim();
+                  })
+                  .filter(function(l) {
+                    return l !== '';
+                  })
+                  .join('\n');
+            }
+            renderOutput(result, lang, true);
+            if (lang.kind !== 'json' && lang.kind !== 'css' && lang.kind !== 'html' && lang.kind !== 'sql') {
+              showToast('Bahasa ini hanya dipadatkan (whitespace), bukan minify penuh');
+            }
+          } catch (err) {
+            renderError('Gagal minify: ' + err.message);
+          }
+        }
+
+        /* ================= RENDER OUTPUT ================= */
+        function renderOutput(text, lang, ok) {
+          outputCode.className = 'font-mono-code text-[13px] leading-[1.55] hljs language-' + lang.hljs;
+          outputCode.textContent = text;
+          if (text && window.hljs) {
+            try {
+              window.hljs.highlightElement(outputCode);
+            } catch (e) {}
+          }
+          emptyState.style.display = text ? 'none' : 'flex';
+          statusDot.style.background = ok ? 'var(--success)' : 'var(--text-faint)';
+          updateStats(statsOut, text);
+          renderGutter(gutterOut, countLines(text));
+        }
+
+        function renderError(msg) {
+          outputCode.className = 'font-mono-code text-[13px] leading-[1.55]';
+          outputCode.textContent = msg;
+          outputCode.style.color = 'var(--danger)';
+          setTimeout(function() {
+            outputCode.style.color = '';
+          }, 10);
+          emptyState.style.display = 'none';
+          statusDot.style.background = 'var(--danger)';
+          statsOut.textContent = 'Error';
+          renderGutter(gutterOut, 1);
+        }
+
+        /* ================= COPY / DOWNLOAD ================= */
+        $('copyBtn').addEventListener('click', function() {
+          var text = outputCode.textContent;
+          if (!text) {
+            showToast('Belum ada hasil untuk disalin');
+            return;
+          }
+          var done = function() {
+            var note = $('copiedNote');
+            note.style.opacity = 1;
+            setTimeout(function() {
+              note.style.opacity = 0;
+            }, 1400);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done).catch(function() {
+              fallbackCopy(text, done);
+            });
+          } else {
+            fallbackCopy(text, done);
+          }
+        });
+
+        function fallbackCopy(text, cb) {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+            cb();
+          } catch (e) {}
+          document.body.removeChild(ta);
+        }
+
+        function downloadOutput() {
+          var text = outputCode.textContent;
+          if (!text) {
+            showToast('Belum ada hasil untuk diunduh');
+            return;
+          }
+          var lang = getLang(state.lang);
+          var blob = new Blob([text], {
+            type: 'text/plain;charset=utf-8'
+          });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'beautified.' + lang.ext;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+        $('downloadBtn').addEventListener('click', downloadOutput);
+        $('downloadBtnM').addEventListener('click', function() {
+          downloadOutput();
+          drawer.classList.remove('open');
+        });
+
+        /* ================= WIRE BEAUTIFY / MINIFY BUTTONS ================= */
+        $('beautifyBtn').addEventListener('click', beautify);
+        $('beautifyBtnMobile').addEventListener('click', beautify);
+        $('minifyBtn').addEventListener('click', minify);
+        $('minifyBtnM').addEventListener('click', function() {
+          minify();
+          drawer.classList.remove('open');
+        });
+
+        /* keyboard shortcut: Ctrl/Cmd+Enter to beautify */
+        inputArea.addEventListener('keydown', function(e) {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            beautify();
+          }
+        });
+
+        /* ================= INITIAL STATE ================= */
+        updateStats(statsIn, '');
+        updateStats(statsOut, '');
+        syncGutters();
+        window.addEventListener('resize', syncGutters);
+
+      })();
+    </script>
+  </body>
+
+</html>
